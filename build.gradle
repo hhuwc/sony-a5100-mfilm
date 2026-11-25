@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+idea.module {
+    sourceDirs += file('src')
+    sourceDirs += file('native')
+}
+sourceSets.main.java.srcDirs = ['src']
+dependencies { compileOnly files('../toolchain/android-9/android.jar') }
+tasks.register('cameraApk', Exec) {
+    workingDir projectDir
+    commandLine 'python', 'build.py'
+}
+tasks.named('assemble') { dependsOn 'cameraApk' }
+
