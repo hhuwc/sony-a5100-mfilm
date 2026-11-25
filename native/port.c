@@ -32,7 +32,7 @@ static struct {
 } state={.magic=0x464f5301,.setting={
     [FS_HUD]=1,[FS_LEDS]=1,[FS_FOCUS]=1,[FS_LENS_WIDE]=6,[FS_FSTOP]=10,[FS_PLAYLOCK]=1,
     [FS_BOOTANIM]=1,[FS_WIND]=1,[FS_SCR_FLIP]=-1,[FS_EXPSIM]=-1,[FS_CANON_OFF]=-1,
-    [FS_HUD_BATT]=1,[FS_FADE]=1,[FS_STARTUP]=2,[FS_DEBUG]=1}};
+    [FS_HUD_BATT]=1,[FS_FADE]=1,[FS_STARTUP]=2,[FS_DEBUG]=1,[FS_SIZE]=FOS_SIZE_M}};
 #define roll state.active
 #define settings state.setting
 static const char *slot[]={DATA "ROLLA.DAT",DATA "ROLLB.DAT"};

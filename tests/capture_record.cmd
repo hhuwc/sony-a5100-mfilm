@@ -10,6 +10,7 @@ cd build\capture-tests
 cl /nologo /O2 /std:c11 /D_CRT_SECURE_NO_WARNINGS /FI../../tests/windows_compat.h /I../filmos /I../../native ../../tests/record_driver.c ../../native/capture_record.c /Fe:record.exe || exit /b 1
 python ../../tests/capture_restart.py record.exe || exit /b 1
 set "MFILM_JAVA=..\..\..\toolchain\jdk-11.0.25+9\bin"
-"%MFILM_JAVA%\javac.exe" --release 8 -d . ../../src/org/mfilm/sony/CaptureFiles.java ../../src/org/mfilm/sony/ShutterFocus.java ../../tests/CaptureFilesTest.java ../../tests/ShutterFocusTest.java || exit /b 1
+"%MFILM_JAVA%\javac.exe" --release 8 -d . ../../src/org/mfilm/sony/CaptureFiles.java ../../src/org/mfilm/sony/ShutterFocus.java ../../src/org/mfilm/sony/MenuPress.java ../../tests/CaptureFilesTest.java ../../tests/ShutterFocusTest.java ../../tests/MenuPressTest.java || exit /b 1
+"%MFILM_JAVA%\java.exe" -cp . org.mfilm.sony.MenuPressTest || exit /b 1
 "%MFILM_JAVA%\java.exe" -cp . org.mfilm.sony.ShutterFocusTest || exit /b 1
 "%MFILM_JAVA%\java.exe" -cp . org.mfilm.sony.CaptureFilesTest

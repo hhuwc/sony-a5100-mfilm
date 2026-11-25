@@ -78,6 +78,11 @@ def prepare():
     path.write_text(s[:a]+"        /* Keep camera originals when removing a roll. */\n"+s[b:],encoding="utf8")
     path=CORE/"fos_dark.c"
     s=path.read_text(encoding="utf8")
+    s=replace(s, "if (vh * step * pv_zf.w > most) most = vh * step * pv_zf.w;",
+              "int band = (vh < FOS_ZOOM_BAND ? vh : FOS_ZOOM_BAND) * step * pv_zf.w;\n"
+              "        if (band > most) most = band;")
+    s=replace(s, 'T_TIMES "%d.%d", f10 / 10, f10 % 10',
+              'pv_zf.f ? T_TIMES "%d.%d" : "Preview " T_TIMES "%d.%d", f10 / 10, f10 % 10')
     s=replace(s,"static int dk_sel;","static int dk_sel, chosen_stock, reprint_roll=-1;\n#define ASK_STOCK 20")
     s=replace(s,"    if (dk_ask == ASK_DEVELOP)\n",'''    if (!dk_ask && k==SONY_RECIPE && r && !r->in_camera && r->shot>0){
         dk_ask=ASK_STOCK; chosen_stock=r->film; ui_damage_all(); return;
@@ -171,6 +176,26 @@ int ui_keycap(int x, int base, const char *key)
     adapt_controls(CORE,replace)
     from reprints import adapt_reprints
     adapt_reprints(CORE,replace)
+    path=CORE/"fos_dev.h"
+    s=path.read_text(encoding="utf8")
+    s=replace(s,"#define FOS_ZOOM_HEAD   16","#define FOS_ZOOM_HEAD   16\n#define FOS_ZOOM_BAND   8")
+    s=replace(s,"rows: room for oh * step rows of the file,\n * read in one go.",
+              "rows: scratch space for min(oh, FOS_ZOOM_BAND) * step source rows.")
+    path.write_text(s,encoding="utf8")
+    path=CORE/"fos_print.c"
+    s=path.read_text(encoding="utf8")
+    s=replace(s,"    if (fos_port_read(z->f, rows, nrows * z->w) != nrows * z->w) return 0;\n","")
+    s=replace(s,"        const uint8_t *s = rows + (ry < nrows ? ry : nrows - 1) * z->w + x;",
+              """        int band_row = j % FOS_ZOOM_BAND;
+        if (band_row == 0)
+        {
+            int count = nrows - ry;
+            if (count > FOS_ZOOM_BAND * step) count = FOS_ZOOM_BAND * step;
+            int bytes = count * z->w;
+            if (fos_port_read(z->f, rows, bytes) != bytes) return 0;
+        }
+        const uint8_t *s = rows + band_row * step * z->w + x;""")
+    path.write_text(s,encoding="utf8")
     path=CORE/"fos_jpeg.c"
     s=path.read_text(encoding="utf8")
     s=replace(s,'{ 0x010F, 2, "Canon" }, { 0x0110, 2, fos_port_model() }',

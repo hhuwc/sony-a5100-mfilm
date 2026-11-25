@@ -8,10 +8,10 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-FOLDERS = ("assets", "gradle", "native", "res", "src", "tests")
+FOLDERS = ("assets", "gradle", "native", "res", "research", "src", "tests")
 FILES = ("AndroidManifest.xml", "build.gradle", "build.py", "fonts.py", "gradlew", "gradlew.bat",
          "LICENSE", "navigation.py", "OFL.txt", "prepare.py", "README.md", "reprints.py",
-         "settings.gradle", "setup.py", "THIRD_PARTY.md", ".gitignore")
+         "settings.gradle", "setup.py", "THIRD_PARTY.md", ".gitignore", ".gitattributes")
 
 
 def source_archive(archive):

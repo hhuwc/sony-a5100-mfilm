@@ -77,6 +77,11 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
         public void note(String message){log(message);}
     };
     private boolean resumed,ready,menu,capturing,surfaceReady,half;
+    private boolean exitRequested;
+    private final MenuPress menuPress=new MenuPress();
+    private final Runnable menuDeadline=new Runnable(){public void run(){
+        handleMenuAction(menuPress.timer(SystemClock.uptimeMillis()));
+    }};
     private boolean restorePausedMenu;
     private String captureFormat;
     private int focusSwitches;
@@ -168,6 +173,7 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
         }catch(Exception e){log("Camera clock unavailable: "+e);}
     }
     private void enterFilmOS(){
+        if(exitRequested || isFinishing())return;
         int page=restorePausedMenu?previousMenu():launchPage();
         restorePausedMenu=false;
         if(page>=0){openPage(page);return;}
@@ -213,13 +219,14 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
         }});
     }
     private void openPage(final int page){
-        if(!ready||!resumed||menu||capturing)return;
+        if(!ready||!resumed||menu||capturing||exitRequested)return;
         stopMeter();main.removeCallbacks(hudTick);main.removeCallbacks(endRoll);main.removeCallbacks(hideActions);
         resetFocus();stopLens();clearMagnification();held=0;menu=true;resetInput();hud.setVisibility(View.GONE);panel.setVisibility(View.VISIBLE);
         directDisplay=false;filmSurface.setVisibility(View.VISIBLE);
         new Thread(new Runnable(){public void run(){
             try{runScreen(page);}finally{main.post(new Runnable(){public void run(){
                 menu=false;directDisplay=false;filmSurface.setVisibility(View.GONE);
+                if(exitRequested){finish();return;}
                 if(resumed && restorePausedMenu){enterFilmOS();return;}
                 panel.setVisibility(View.VISIBLE);panel.invalidate();hud.setVisibility(View.VISIBLE);
                 finderItem=0;showFinderActions(true);
@@ -253,6 +260,7 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
     }
     protected void onPause(){
         resumed=false;
+        clearMenuPress();
         unregisterReceiver(batteryChanges);
         main.removeCallbacks(hudTick);
         if(menu){restorePausedMenu=true;input(-1);}
@@ -511,7 +519,7 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
         updateExposure(aperture,SonyFinderMeter.widest(lens,aperture),n,d,name);
     }
     private void shoot(){
-        if(menu||capturing||!ready||remaining()<=0||camera==null)return;
+        if(menu||capturing||exitRequested||!ready||remaining()<=0||camera==null)return;
         if(captureFormat!=null && !"rawjpeg".equals(captureFormat) && !"raw".equals(captureFormat)){
             applyStock();
             if(!"rawjpeg".equals(captureFormat) && !"raw".equals(captureFormat)){
@@ -543,8 +551,12 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
                     finderItem=0;hudFlashUntil=SystemClock.uptimeMillis()+2500;showFinderActions();panel.invalidate();
                     if(remaining()==0 && resumed)main.postDelayed(endRoll,1500);
                 }});
-            }catch(Exception e){report("Frame",e);}
+            }catch(Exception e){
+                main.post(new Runnable(){public void run(){exitRequested=false;}});
+                report("Frame",e);
+            }
             finally{main.post(new Runnable(){public void run(){capturing=false;
+                if(exitRequested){finish();return;}
                 if(resumed && !menu){
                     if(camera!=null)try{camera.startPreview();syncMeter();}catch(RuntimeException e){report("Preview restart",e);}
                     else startPreview();
@@ -553,6 +565,28 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
         }},"FilmOS-card").start();
     }
     private native boolean completeRaw(String path);
+    private void clearMenuPress(){
+        main.removeCallbacks(menuDeadline);
+        menuPress.cancel();
+    }
+    public void onWindowFocusChanged(boolean focused){
+        super.onWindowFocusChanged(focused);
+        if(!focused)clearMenuPress();
+    }
+    private void handleMenuAction(MenuPress.Action action){
+        if(action==MenuPress.Action.NONE || !resumed || exitRequested)return;
+        if(action==MenuPress.Action.EXIT){
+            exitRequested=true;
+            main.removeCallbacks(endRoll);
+            if(capturing)finderText("Saving frame before exit…");
+            else if(menu)input(-1); // Finish when the native screen has released its files.
+            else finish();
+        }else if(!ready)finish();
+        else if(menu){
+            if(tracing && !directDisplay)keyTime=SystemClock.uptimeMillis();
+            input(8);
+        }else if(!capturing)openPage(previousMenu());
+    }
     private static int key(KeyEvent e){
         switch(e.getScanCode()){
             case 105:return 1;case 106:return 2;case 103:case 608:return 3;case 108:return 4;
@@ -572,6 +606,17 @@ public final class FilmOS extends Activity implements SurfaceHolder.Callback {
         int scan=e.getScanCode();
         if(ready && (scan==610 || scan==611 || scan==645))return zoomEvent(scan,e);
         int k=key(e);
+        if(k==8 && (scan==514 || scan==229 || e.getKeyCode()==KeyEvent.KEYCODE_MENU)){
+            if(e.getAction()==KeyEvent.ACTION_DOWN && e.getRepeatCount()==0 && menuPress.start(e.getEventTime())){
+                held=0;
+                main.postAtTime(menuDeadline,e.getEventTime()+MenuPress.HOLD_MS);
+            }else if(e.getAction()==KeyEvent.ACTION_UP){
+                main.removeCallbacks(menuDeadline);
+                handleMenuAction(menuPress.release(e.getEventTime(),e.isCanceled()));
+            }
+            if(tracing)Log.i("FilmOS","MENU scan="+scan+" action="+e.getAction()+" repeat="+e.getRepeatCount());
+            return true;
+        }
         if(!ready && k==8){if(e.getAction()==KeyEvent.ACTION_UP)finish();return true;}
         if(k==0||!ready)return super.dispatchKeyEvent(e);
         boolean down=e.getAction()==KeyEvent.ACTION_DOWN;

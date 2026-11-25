@@ -31,7 +31,8 @@ def build(zig):
 void menu_snapshot(void);
 """, encoding="ascii")
     sim = out / "sim.c"
-    edit(sim, '    if (argc < 3)', '    extern int menu_color_test(void);\n'
+    edit(sim, '    if (argc < 3)', '    extern int menu_color_test(void), zoom_reader_test(void);\n'
+         '    if(argc==2 && !strcmp(argv[1],"--check-zoom"))return zoom_reader_test();\n'
          '    if(argc==2 && !strcmp(argv[1],"--check-colour"))return menu_color_test();\n    if (argc < 3)')
     edit(sim, '#include "navigation.h"', '#include "navigation.h"\n#include "display_color.h"\n#include "stock_settings.h"')
     edit(sim,'    if (argc < 3)',r'''    if(argc==2 && !strcmp(argv[1],"--stocks")){
@@ -119,6 +120,7 @@ void menu_dark_snapshot(void) {
         sources.append(source)
     native = port / "native"
     sources.extend([native / "editions.c", native / "master_prints.c", native / "arw.c", port / "tests/menu_color.c"])
+    sources.append(port / "tests/zoom_reader_test.c")
     win = out / "win_fs.h"
     win.write_text("#include <direct.h>\n#define mkdir(path,mode) _mkdir(path)\n", encoding="ascii")
     binary = out / "menu.exe"
@@ -126,6 +128,7 @@ void menu_dark_snapshot(void) {
                     "-I", str(core), "-I", str(native), "-include", str(win),
                     *map(str, sources), "-o", str(binary)], cwd=out, check=True)
     subprocess.run([str(binary),"--check-colour"],check=True)
+    subprocess.run([str(binary),"--check-zoom"],check=True)
     return binary
 
 

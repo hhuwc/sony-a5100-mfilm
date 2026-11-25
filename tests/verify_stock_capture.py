@@ -47,7 +47,14 @@ def verify(stocks, roll, raw, jpeg, cli):
     checks=[]
     for path,seen in zip((raw,jpeg),data):
         with path.open("rb") as f:digest=hashlib.file_digest(f,"sha256").hexdigest()
-        diff={k:{"requested":v,"recorded":seen.get(k)} for k,v in expected.items() if seen.get(k)!=v}
+        diff={}
+        for key, requested in expected.items():
+            recorded=seen.get(key)
+            # ExifTool displays positive Sony style adjustments with an explicit plus sign.
+            if isinstance(requested,int) and isinstance(recorded,str) and re.fullmatch(r"[+-]?\d+",recorded):
+                recorded=int(recorded)
+            if recorded!=requested:
+                diff[key]={"requested":requested,"recorded":seen.get(key)}
         checks.append({"file":path.name,"sha256":digest,"recorded":{k:seen.get(k) for k in keys},
                        "differences":diff})
     return {"roll":roll.name,"frame":int(frame[1]),"stock":stock[1],"box_iso":box,"expected":expected,

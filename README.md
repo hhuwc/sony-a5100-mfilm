@@ -19,6 +19,10 @@ adb -s CAMERA_IP:5555 install --no-streaming -r .\sony-port\dist\M-Film-0.2.4-IL
 
 四个方向键移动当前焦点、候选项或放大区域，中间 OK 执行选中项。MENU 短按返回上一级或取消弹窗。图片缩放和取景放大只用快门旁的 W/T 拨杆，每拨一次回中后可以再拨。实体 ▶ 进入回看，在胶卷架查看当前胶卷的示例图，在取景或 Home 查看成片。机背 ? 执行当前页标出的辅助操作。
 
+研究分支 port20 增加了长按 MENU 满 2 秒退出。短按在松手时返回，长按触发一次退出。快门写卡时等照片入卷，暗房工作时等当前任务关闭文件。这个手势已通过桌面按键测试，实体 MENU 的按住时序仍待真机验证。
+
+如果希望放大检查细节，在 Settings → Print size 选 Large，用 Darkroom → Recipe 选择原胶卷重洗已结束的卷。α5100 横幅的 Large 是 3012 × 2012，Medium 是 2008 × 1341。port20 首次启动的默认值为 Medium，已有机身设置会继续使用。Small 只有 720 × 480，在相机上用 T 放大时，port20 会标出 Preview。[成片和性能调研](research/print-detail.md)
+
 状态栏和按键名使用 15 px Barlow Bold，底栏及小字正文使用 18 px Barlow SemiBold，字号以 720 × 480 设计画布为准。标准构建直接打包项目内的小字号字库。用 Python 3.12、Pillow 13.0.0 运行 `python sony-port/fonts.py` 可从锁定版本的原版 Barlow 字体重新生成它。
 
 | 屏幕 | 方向键 | 中间 OK、MENU 和其他实体键 |

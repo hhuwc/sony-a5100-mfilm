@@ -63,6 +63,10 @@ def adapt_controls(core, replace):
     write("fos_shelf.c",s)
 
     s=read("fos_pages.c")
+    s=replace(s, '"A third of the sensor each way", "Half the sensor each way"',
+              '"2008 " T_TIMES " 1341", "3012 " T_TIMES " 2012"')
+    s=replace(s, '"The quickest. No zoom.", "About 2 MP from 18. Zooms in.", "About 4.5 MP from 18. Slowest."',
+              '"0.35 MP. Screen size.", "2.7 MP. More detail.", "6.1 MP. Slowest."')
     s=replace(s,'{ "PLAY shows prints only", IT_TOGGLE, FS_PLAYLOCK, 0, 0, "Canon\'s playback would show frames the darkroom hasn\'t developed." }',
                 '{ "Playback", IT_INFO, -4, 0, 0, "Press PLAY to view developed prints. On the film shelf, PLAY opens the sample." }')
     s=replace(s,'else if (it->setting == -3)\n            {','else if (it->setting == -4) snprintf(b,sizeof(b),"Film prints");\n            else if (it->setting == -3)\n            {')
@@ -151,6 +155,8 @@ void page_draw()""")
 def adapt_dark(core,replace):
     path=core/"fos_dark.c"
     s=path.read_text(encoding="utf8")
+    s=replace(s, '"a third of the sensor each way, zoom"', '"2.7 MP"')
+    s=replace(s, '"half the sensor each way, more zoom"', '"6.1 MP"')
     s=replace(s,"void develop_enter(int arg)\n{","""/* Show the key's visual feedback before the next long RAW work slice.
  * With repeating input, always allow work on the following tick. */
 enum { DEV_NORMAL, DEV_SHOW_INPUT, DEV_RESUME_WORK };
